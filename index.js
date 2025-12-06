@@ -108,7 +108,25 @@ async function run() {
         res.send(result);
     });
 
-   
+    app.get("/contributions/:issueId", async (req, res) => {
+        const issueId = req.params.issueId;
+        const query = { issueId: issueId }; 
+        const result = await contributionsCollection.find(query).toArray();
+        res.send(result);
+    });
+
+    app.get("/my-contributions/:email", async (req, res) => {
+        const email = req.params.email;
+        const query = { userEmail: email }; 
+        const result = await contributionsCollection.find(query).toArray();
+        res.send(result);
+    });
+    app.post("/contributions", async (req, res) => {
+        const contribution = req.body;
+        contribution.date = new Date(); 
+        const result = await contributionsCollection.insertOne(contribution);
+        res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
