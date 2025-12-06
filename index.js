@@ -34,6 +34,17 @@ async function run() {
         res.send({ totalUsers, totalIssues });
     });
 
+    app.post("/users", async (req, res) => {
+        const user = req.body;
+        const query = { email: user.email };
+        const existingUser = await usersCollection.findOne(query);
+        if (existingUser) {
+            return res.send({ message: "User already exists", insertedId: null });
+        }
+        const result = await usersCollection.insertOne(user);
+        res.send(result);
+    });
+
     app.get("/issues", async (req, res) => {
       const result = await issuesCollection.find().toArray();
       res.send(result);
