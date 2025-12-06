@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -10,7 +10,6 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.c3nyioy.mongodb.net/?appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -34,7 +33,7 @@ async function run() {
         res.send({ totalUsers, totalIssues });
     });
 
-    app.post("/users", async (req, res) => {
+    app.post("/register", async (req, res) => {
         const user = req.body;
         const query = { email: user.email };
         const existingUser = await usersCollection.findOne(query);
@@ -56,7 +55,7 @@ async function run() {
         const { search, status } = req.query;
         let query = {};
         if (search) {
-            query.title = { $regex: search, $options: "i" }; // Case insensitive
+            query.title = { $regex: search, $options: "i" }; 
         }
         if (status) {
             query.status = status;
@@ -70,6 +69,7 @@ async function run() {
             .find().sort({ date: -1 }).limit(6).toArray();
         res.send(result);
     });
+
     app.get("/issues/:id", async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
@@ -109,6 +109,7 @@ async function run() {
     });
 
    
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
