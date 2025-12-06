@@ -45,10 +45,63 @@ async function run() {
         res.send(result);
     });
 
-    app.get("/issues", async (req, res) => {
-      const result = await issuesCollection.find().toArray();
-      res.send(result);
+    app.post("/issues", async (req, res) => {
+        const issue = req.body;
+        issue.date = new Date(); 
+        const result = await issuesCollection.insertOne(issue);
+        res.send(result);
     });
+
+    app.get("/issues", async (req, res) => {
+        const { search, status } = req.query;
+        let query = {};
+        if (search) {
+            query.title = { $regex: search, $options: "i" }; // Case insensitive
+        }
+        if (status) {
+            query.status = status;
+        }
+        const result = await issuesCollection.find(query).toArray();
+        res.send(result);
+    });
+
+    app.get("/issues-recent", async (req, res) => {
+        const result = await issuesCollection
+            .find().sort({ date: -1 }).limit(6).toArray();
+        res.send(result);
+    });
+    app.get("/issues/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await issuesCollection.findOne(query);
+        res.send(result);
+    });
+
+    app.get("/my-issues/:email", async (req, res) => {
+        const email = req.params.email;
+        const query = { email: email };
+        const result = await issuesCollection.find(query).toArray();
+        res.send(result);
+    });
+
+    app.patch("/issues/:id", async (req, res) => {
+        const id = req.params.id;
+        const data = req.body;
+        const filter = { _id: new ObjectId(id) };
+        const updatedDoc = {
+            $set: {
+                title: data.title,
+                description: data.description,
+                category: data.category,
+                amount: data.amount,
+                status: data.status
+            }
+        };
+        const result = await issuesCollection.updateOne(filter, updatedDoc);
+        res.send(result);
+    });
+
+   
 
     await client.db("admin").command({ ping: 1 });
     console.log(
