@@ -1,4 +1,4 @@
-const express = require("express");
+\const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -108,6 +108,27 @@ async function run() {
         res.send(result);
     });
 
+    app.post("/contributions", async (req, res) => {
+        const contribution = req.body;
+        contribution.date = new Date();
+        const result = await contributionsCollection.insertOne(contribution);
+
+        const issueId = contribution.issueId;
+        const allContributions = await contributionsCollection.find({ issueId: issueId }).toArray();
+        const totalRaised = allContributions.reduce((sum, item) => sum + item.amount, 0);
+
+        const query = { _id: new ObjectId(issueId) };
+        const issue = await issuesCollection.findOne(query);
+
+        if (issue && totalRaised >= issue.amount && issue.status !== "Resolved") {
+            await issuesCollection.updateOne(query, {
+                $set: { status: "Resolved" }
+            });
+        }
+
+        res.send(result);
+    });
+
     app.get("/contributions/:issueId", async (req, res) => {
         const issueId = req.params.issueId;
         const query = { issueId: issueId }; 
@@ -119,12 +140,6 @@ async function run() {
         const email = req.params.email;
         const query = { userEmail: email }; 
         const result = await contributionsCollection.find(query).toArray();
-        res.send(result);
-    });
-    app.post("/contributions", async (req, res) => {
-        const contribution = req.body;
-        contribution.date = new Date(); 
-        const result = await contributionsCollection.insertOne(contribution);
         res.send(result);
     });
 
